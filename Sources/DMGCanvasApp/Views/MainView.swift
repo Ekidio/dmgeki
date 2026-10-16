@@ -189,14 +189,7 @@ private struct WindowAccessor: NSViewRepresentable {
         return view
     }
     
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            if let window = nsView.window {
-                window.title = ""
-                window.titleVisibility = .hidden
-                window.appearance = NSAppearance(named: .darkAqua)
-                window.backgroundColor = NSColor(red: 0x11 / 255.0, green: 0x11 / 255.0, blue: 0x13 / 255.0, alpha: 1.0)
-            }
-        }
-    }
+    // Applied once in makeNSView: re-setting appearance / title visibility on every SwiftUI update
+    // changes the safe area, which triggers another update – a layout loop that crashes the window.
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }

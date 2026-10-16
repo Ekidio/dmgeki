@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 ./build_app.sh
 
 APP="DMGEKI.app"
-VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
+VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
 DMG="dist/DMGEKI-$VERSION.dmg"
 BG=".dmg"
 

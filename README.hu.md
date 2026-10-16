@@ -23,6 +23,7 @@ A DMGEKI egy **EKIDIO** alkalmazás. Lásd még: [STEMEKI](https://github.com/Ek
 - **Húzásjelző nyíl:** íves, egyenes, izzó színátmenetes, minimál vonal vagy nincs – a háttérbe égetve.
 - **Fájlok és mappák:** további fájlok és mappák a DMG-be (kézikönyv, licenc, pluginek…) az **Add Files or Folders…** gombbal vagy a Finderből behúzva az oldalsávra vagy egyenesen a vászonra – oda kerülnek, ahová ejted őket. Egy behúzott `.app` lesz a cél alkalmazás. Jobb klikk vagy ⌫ törli az elemet.
 - **Kötet:** a felcsatolt kötet neve, kötetikon (saját `.icns` vagy az app saját ikonja), kimeneti fájlnév és mappa.
+- **Automatikus frissítés:** a DMGEKI minden indításkor (és nyitva tartva naponta) megnézi a GitHubon, van-e új verzió, és felajánlja a telepítését; a **DMGEKI → Check for Updates…** azonnal ellenőriz. A frissítéseket EdDSA aláírás védi (Sparkle).
 - **Projektek:** **File → Open Project…** (⌘O) és **Save Project…** (⌘S), `.dmgproj` formátumban.
 - **Build DMG** (⌘B, jobb fent): a háttérben elkészíti a lemezképet (alapból UDZO; a motor az ULFO, UDBZ, UDRO, UDRW formátumot is ismeri).
 - **DMG kész:** amikor elkészült, egy animált kártya mutatja a fájlt és a méretét, **Show in Finder**, **Open DMG** és **Done** gombokkal.
@@ -46,9 +47,9 @@ Töltsd le a **DMGEKI.dmg**-t, nyisd meg, és húzd a DMGEKI-t az Applications m
 open DMGEKI.app
 ```
 
-A telepítő DMG elkészítése (`dist/DMGEKI-<verzió>.dmg`): `./make-dmg.sh`.
+A telepítő DMG elkészítése (`dist/DMGEKI-<verzió>.dmg`): `./make-dmg.sh`. Kiadás aláírt frissítési feeddel (`appcast.xml`): emeld a verziót az `Info.plist`-ben, majd `./make-release.sh`.
 
-A `build_app.sh` release binárist fordít, ikonnal együtt `DMGEKI.app`-ba csomagolja, ad-hoc aláírja, és frissíti a Finder / Dock ikongyorsítótárát.
+A `build_app.sh` release binárist fordít (a Sparkle-t egyszer letölti a `.vendor/` mappába), ikonnal és Sparkle-lel együtt `DMGEKI.app`-ba csomagolja, ad-hoc aláírja, és frissíti a Finder / Dock ikongyorsítótárát.
 
 Fejlesztéshez:
 
@@ -65,6 +66,8 @@ DMGEKI/
 ├── Package.swift
 ├── build_app.sh                       # release build → DMGEKI.app
 ├── make-dmg.sh                        # telepítő DMG → dist/
+├── make-release.sh                    # DMG + aláírt Sparkle appcast egy GitHub kiadáshoz
+├── Info.plist · release.conf · sparkle-public-key.txt
 ├── Tools/                             # DMG háttér + dmgbuild beállítások
 ├── Resources/AppIcon.icns
 ├── docs/assets/                       # README képek

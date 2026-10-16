@@ -23,6 +23,7 @@ DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/steme
 - **Drag arrow:** curved, straight, glow gradient, minimal line or none – baked into the background.
 - **Files & folders:** add extra files and folders to the DMG (manuals, licences, plug-ins…) with **Add Files or Folders…** or by dragging them from Finder onto the sidebar or straight onto the canvas – they land where you drop them. Dropping a `.app` sets it as the target application. Right-click or ⌫ removes an item.
 - **Volume:** mounted volume name, volume icon (your `.icns` or the app's own icon), output file name and folder.
+- **Automatic updates:** DMGEKI checks GitHub for a new version at every launch (and daily while open) and offers to install it; **DMGEKI → Check for Updates…** checks right away. Updates are verified with an EdDSA signature (Sparkle).
 - **Projects:** **File → Open Project…** (⌘O) and **Save Project…** (⌘S) as `.dmgproj`.
 - **Build DMG** (⌘B, top right): builds the image in the background (UDZO by default; ULFO, UDBZ, UDRO, UDRW supported by the engine).
 - **DMG Ready:** when the build is done, an animated card shows the file and its size, with **Show in Finder**, **Open DMG** and **Done**.
@@ -46,9 +47,9 @@ Download **DMGEKI.dmg**, open it and drag DMGEKI into Applications. The app is n
 open DMGEKI.app
 ```
 
-To make the installer DMG (`dist/DMGEKI-<version>.dmg`): `./make-dmg.sh`.
+To make the installer DMG (`dist/DMGEKI-<version>.dmg`): `./make-dmg.sh`. For a release with the signed update feed (`appcast.xml`): bump the version in `Info.plist`, then `./make-release.sh`.
 
-`build_app.sh` builds a release binary, packages `DMGEKI.app` with its icon, signs it ad-hoc and refreshes the Finder / Dock icon cache.
+`build_app.sh` builds a release binary (downloading Sparkle once into `.vendor/`), packages `DMGEKI.app` with its icon and Sparkle, signs it ad-hoc and refreshes the Finder / Dock icon cache.
 
 For development:
 
@@ -65,6 +66,8 @@ DMGEKI/
 ├── Package.swift
 ├── build_app.sh                       # release build → DMGEKI.app
 ├── make-dmg.sh                        # installer DMG → dist/
+├── make-release.sh                    # DMG + signed Sparkle appcast for a GitHub release
+├── Info.plist · release.conf · sparkle-public-key.txt
 ├── Tools/                             # DMG background + dmgbuild settings
 ├── Resources/AppIcon.icns
 ├── docs/assets/                       # README screenshots

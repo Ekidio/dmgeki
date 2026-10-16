@@ -1,80 +1,56 @@
-#!/usr/bin/env bash
+#!/bin/zsh
+# Builds "DMGEKI.app" (Apple Silicon) with Sparkle auto-update, ad-hoc signed.
 set -euo pipefail
+cd "$(dirname "$0")"
+
+source ./release.conf
 
 APP_NAME="DMGEKI"
-BUNDLE_DIR="${APP_NAME}.app"
-CONTENTS_DIR="${BUNDLE_DIR}/Contents"
-MACOS_DIR="${CONTENTS_DIR}/MacOS"
-RESOURCES_DIR="${CONTENTS_DIR}/Resources"
+APP="$APP_NAME.app"
 
-echo "🔨 Building Swift binary (Release)..."
-swift build -c release
+SPARKLE_VERSION="2.10.0"
+SPARKLE_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
+SPARKLE_DIR=".vendor/Sparkle-$SPARKLE_VERSION"
 
-BIN_PATH=".build/release/DMGCanvasApp"
-if [ ! -f "${BIN_PATH}" ]; then
-    echo "❌ Error: Binary not found at ${BIN_PATH}"
-    exit 1
+# Sparkle (auto-update framework), downloaded once and checksum-verified (same as STEMEKI, CHORDEKI, EXEKI).
+if [[ ! -d "$SPARKLE_DIR/Sparkle.framework" ]]; then
+    echo "→ Sparkle $SPARKLE_VERSION letöltése"
+    mkdir -p "$SPARKLE_DIR"
+    ARCHIVE="$SPARKLE_DIR.tar.xz"
+    curl -sSL -o "$ARCHIVE" "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+    echo "$SPARKLE_SHA256  $ARCHIVE" | shasum -a 256 -c --status || { echo "✗ Sparkle ellenőrzőösszeg hibás"; rm -rf "$SPARKLE_DIR" "$ARCHIVE"; exit 1; }
+    tar -xf "$ARCHIVE" -C "$SPARKLE_DIR"
+    rm "$ARCHIVE"
 fi
 
-echo "📦 Packaging ${APP_NAME}.app bundle..."
-rm -rf "${BUNDLE_DIR}"
-mkdir -p "${MACOS_DIR}"
-mkdir -p "${RESOURCES_DIR}"
+echo "→ Fordítás (SwiftPM, release)"
+# SwiftPM build (a plain swiftc build of the same sources crashes SwiftUI's split view layout at launch).
+SPARKLE_ABS="$PWD/$SPARKLE_DIR"
+swift build -c release \
+    -Xswiftc -F -Xswiftc "$SPARKLE_ABS" \
+    -Xlinker -F -Xlinker "$SPARKLE_ABS" -Xlinker -framework -Xlinker Sparkle \
+    -Xlinker -rpath -Xlinker @executable_path/../Frameworks
+BIN=".build/release/DMGCanvasApp"
 
-cp "${BIN_PATH}" "${MACOS_DIR}/${APP_NAME}"
-chmod +x "${MACOS_DIR}/${APP_NAME}"
-
-# Copy AppIcon.icns
-if [ -f "Resources/AppIcon.icns" ]; then
-    cp "Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
-elif [ -f "AppIcon.icns" ]; then
-    cp "AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+rm -rf "$APP"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
+cp "$BIN" "$APP/Contents/MacOS/$APP_NAME"
+ditto "$SPARKLE_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+PLIST="$APP/Contents/Info.plist"
+cp Info.plist "$PLIST"
+/usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $(cat sparkle-public-key.txt)" "$PLIST"
+if [[ -n "$GITHUB_REPO" ]]; then
+    /usr/libexec/PlistBuddy -c "Add :SUFeedURL string https://github.com/$GITHUB_REPO/releases/latest/download/appcast.xml" "$PLIST"
+else
+    echo "  (release.conf: GITHUB_REPO üres → automatikus frissítés kikapcsolva)"
 fi
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-# Generate Info.plist
-cat << EOF > "${CONTENTS_DIR}/Info.plist"
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>${APP_NAME}</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.ekidio.dmgeki</string>
-    <key>CFBundleName</key>
-    <string>${APP_NAME}</string>
-    <key>CFBundleDisplayName</key>
-    <string>DMGEKI</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIconName</key>
-    <string>AppIcon</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.1.0</string>
-    <key>CFBundleVersion</key>
-    <string>2</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSSupportsAutomaticGraphicsSwitching</key>
-    <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>DMGEKI requires permission to control Finder via AppleScript to set window layouts, icon positions, and background styling for created disk images.</string>
-</dict>
-</plist>
-EOF
-
-echo "🔏 Ad-hoc code signing app bundle..."
-codesign --force --deep --sign - "${BUNDLE_DIR}"
+echo "→ Aláírás (ad-hoc)"
+codesign --force --deep --sign - "$APP"
 
 # Refresh Finder / Dock icon cache so a changed AppIcon shows up immediately
-touch "${BUNDLE_DIR}"
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "${BUNDLE_DIR}" || true
+touch "$APP"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" || true
 
-echo "✅ App bundle created successfully at: ${BUNDLE_DIR}"
-echo "💡 You can launch it with: open ${BUNDLE_DIR}"
+echo "✓ Kész: $APP"

@@ -3,6 +3,8 @@ import AppKit
 
 @main
 struct DMGCanvasApp: App {
+    @StateObject private var updater = Updater.shared
+    
     init() {
         // Apply DMGEKI branding icon to macOS dock and application
         if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
@@ -16,12 +18,19 @@ struct DMGCanvasApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()
-                .frame(minWidth: 1100, idealWidth: 1280, minHeight: 700, idealHeight: 820)
+                // Wide enough for sidebar (260) + canvas (500) + inspector (330) + dividers; a narrower
+                // window makes the split view loop on its constraints and crash at launch.
+                .frame(minWidth: 1180, idealWidth: 1380, minHeight: 700, idealHeight: 860)
                 .preferredColorScheme(.dark)
         }
+        .defaultSize(width: 1380, height: 860)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { updater.checkForUpdates() }
+                    .disabled(!updater.canCheckForUpdates)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New Project") {
                     // Handled inside app or via notification
