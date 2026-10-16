@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+DMGEKI.app/
+dist/
+*.dmg
+.DS_Store
