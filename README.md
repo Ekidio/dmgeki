@@ -2,11 +2,13 @@
 
 🇬🇧 English · [🇭🇺 Magyar](README.hu.md)
 
+**⬇ Download:** [DMGEKI.dmg (latest)](https://github.com/Ekidio/dmgeki/releases/latest/download/DMGEKI.dmg) · [release notes](https://github.com/Ekidio/dmgeki/releases/latest)
+
 ![DMGEKI](docs/assets/dmgeki-main.png)
 
 **DMGEKI** is a native macOS app for designing and building `.dmg` installers visually: drop in your app, arrange the Finder window exactly as your users will see it, style the background, and press **Build DMG**.
 
-It's written in Swift / SwiftUI and drives the macOS command-line tools under the hood (`hdiutil`, AppleScript for the Finder window, `tiffutil`, `codesign`, `xcrun notarytool` / `stapler`).
+It's written in Swift / SwiftUI and drives the macOS command-line tools under the hood (`hdiutil`, AppleScript for the Finder window, `tiffutil`).
 
 DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/stemeki) · [CHORDEKI](https://github.com/Ekidio/chordeki) · [EXEKI](https://github.com/Ekidio/exeki).
 
@@ -27,12 +29,14 @@ DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/steme
 
 ![DMG Ready](docs/assets/dmgeki-ready.png)
 
-> The build engine also supports code signing (Developer ID), notarization + stapling, a license agreement (EULA) and exporting a standalone `build_dmg.sh` for CI. These are in the code but not yet exposed in the interface.
-
 ## Requirements
 
 - macOS 14 Sonoma or later
 - Xcode command-line tools (Swift 5.9+)
+
+## Install
+
+Download **DMGEKI.dmg**, open it and drag DMGEKI into Applications. The app is not notarized by Apple, so the first time macOS may refuse to open it: click **Done**, then **System Settings → Privacy & Security → Open Anyway**. This is needed only once.
 
 ## Build and run
 
@@ -40,6 +44,8 @@ DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/steme
 ./build_app.sh
 open DMGEKI.app
 ```
+
+To make the installer DMG (`dist/DMGEKI-<version>.dmg`): `./make-dmg.sh`.
 
 `build_app.sh` builds a release binary, packages `DMGEKI.app` with its icon, signs it ad-hoc and refreshes the Finder / Dock icon cache.
 
@@ -57,13 +63,15 @@ or open `Package.swift` in Xcode and press ⌘R.
 DMGEKI/
 ├── Package.swift
 ├── build_app.sh                       # release build → DMGEKI.app
+├── make-dmg.sh                        # installer DMG → dist/
+├── Tools/                             # DMG background + dmgbuild settings
 ├── Resources/AppIcon.icns
 ├── docs/assets/                       # README screenshots
 └── Sources/DMGCanvasApp/
     ├── main.swift                     # app entry, menu commands (Open / Save Project)
     ├── Models/                        # project, items, window settings, formats, build log
     ├── Services/
-    │   ├── DMGBuilderService.swift    # hdiutil / Finder / signing build engine
+    │   ├── DMGBuilderService.swift    # hdiutil / Finder build engine
     │   ├── CanvasBackgroundRenderer.swift
     │   ├── AppleScriptGenerator.swift
     │   ├── ImageCache.swift           # keeps images off the main thread's hot path

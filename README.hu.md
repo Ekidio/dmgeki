@@ -2,11 +2,13 @@
 
 [🇬🇧 English](README.md) · 🇭🇺 Magyar
 
+**⬇ Letöltés:** [DMGEKI.dmg (legújabb)](https://github.com/Ekidio/dmgeki/releases/latest/download/DMGEKI.dmg) · [kiadási megjegyzések](https://github.com/Ekidio/dmgeki/releases/latest)
+
 ![DMGEKI](docs/assets/dmgeki-main.png)
 
 A **DMGEKI** natív macOS alkalmazás `.dmg` telepítők vizuális tervezéséhez és elkészítéséhez: behúzod az appodat, pontosan úgy rendezed el a Finder-ablakot, ahogy a felhasználó látni fogja, megformázod a hátteret, és megnyomod a **Build DMG** gombot.
 
-Swift / SwiftUI alatt készült, a háttérben a macOS parancssori eszközeit használja (`hdiutil`, AppleScript a Finder-ablakhoz, `tiffutil`, `codesign`, `xcrun notarytool` / `stapler`).
+Swift / SwiftUI alatt készült, a háttérben a macOS parancssori eszközeit használja (`hdiutil`, AppleScript a Finder-ablakhoz, `tiffutil`).
 
 A DMGEKI egy **EKIDIO** alkalmazás. Lásd még: [STEMEKI](https://github.com/Ekidio/stemeki) · [CHORDEKI](https://github.com/Ekidio/chordeki) · [EXEKI](https://github.com/Ekidio/exeki).
 
@@ -27,12 +29,14 @@ A DMGEKI egy **EKIDIO** alkalmazás. Lásd még: [STEMEKI](https://github.com/Ek
 
 ![DMG kész](docs/assets/dmgeki-ready.png)
 
-> A build motor kódaláírást (Developer ID), notarizálást és staplinget, licencszerződést (EULA) és önálló `build_dmg.sh` exportot is tud CI-hoz. Ezek a kódban megvannak, de a felületről még nem érhetők el.
-
 ## Követelmények
 
 - macOS 14 Sonoma vagy újabb
 - Xcode parancssori eszközök (Swift 5.9+)
+
+## Telepítés
+
+Töltsd le a **DMGEKI.dmg**-t, nyisd meg, és húzd a DMGEKI-t az Applications mappába. Az appot az Apple nem hitelesítette, ezért elsőre a macOS nem engedheti megnyitni: kattints a **Kész** gombra, majd **Rendszerbeállítások → Adatvédelem és biztonság → Megnyitás mindenképp**. Ez csak egyszer kell.
 
 ## Fordítás és futtatás
 
@@ -40,6 +44,8 @@ A DMGEKI egy **EKIDIO** alkalmazás. Lásd még: [STEMEKI](https://github.com/Ek
 ./build_app.sh
 open DMGEKI.app
 ```
+
+A telepítő DMG elkészítése (`dist/DMGEKI-<verzió>.dmg`): `./make-dmg.sh`.
 
 A `build_app.sh` release binárist fordít, ikonnal együtt `DMGEKI.app`-ba csomagolja, ad-hoc aláírja, és frissíti a Finder / Dock ikongyorsítótárát.
 
@@ -57,13 +63,15 @@ vagy nyisd meg a `Package.swift`-et Xcode-ban, és nyomj ⌘R-t.
 DMGEKI/
 ├── Package.swift
 ├── build_app.sh                       # release build → DMGEKI.app
+├── make-dmg.sh                        # telepítő DMG → dist/
+├── Tools/                             # DMG háttér + dmgbuild beállítások
 ├── Resources/AppIcon.icns
 ├── docs/assets/                       # README képek
 └── Sources/DMGCanvasApp/
     ├── main.swift                     # belépési pont, menüparancsok (Open / Save Project)
     ├── Models/                        # projekt, elemek, ablakbeállítások, formátumok, build napló
     ├── Services/
-    │   ├── DMGBuilderService.swift    # hdiutil / Finder / aláírás build motor
+    │   ├── DMGBuilderService.swift    # hdiutil / Finder build motor
     │   ├── CanvasBackgroundRenderer.swift
     │   ├── AppleScriptGenerator.swift
     │   ├── ImageCache.swift           # képek gyorsítótára, hogy ne lassuljon a fő szál

@@ -55,21 +55,9 @@ public struct DMGProject: Identifiable, Codable, Equatable {
     public var watermarkText: String
     public var volumeIconPath: String?
     
-    // License agreement
-    public var eulaEnabled: Bool
-    public var eulaContent: String
-    public var eulaLanguage: String
-    
     // Build and Compression (Hardcoded to UDZO)
     public var format: DMGCompressionFormat
     public var compressionLevel: Int
-    
-    // Code signing & Notarization
-    public var codeSigningEnabled: Bool
-    public var signingIdentity: String
-    public var notarizationEnabled: Bool
-    public var notarizationProfile: String
-    public var stapleTicket: Bool
     
     // Canvas WYSIWYG Guides
     public var showGrid: Bool
@@ -99,16 +87,8 @@ public struct DMGProject: Identifiable, Codable, Equatable {
         showWatermark: Bool = true,
         watermarkText: String = "Drag to Applications to Install",
         volumeIconPath: String? = nil,
-        eulaEnabled: Bool = false,
-        eulaContent: String = "",
-        eulaLanguage: String = "en_US",
         format: DMGCompressionFormat = .udzo,
         compressionLevel: Int = 9,
-        codeSigningEnabled: Bool = false,
-        signingIdentity: String = "",
-        notarizationEnabled: Bool = false,
-        notarizationProfile: String = "",
-        stapleTicket: Bool = true,
         showGrid: Bool = false,
         gridSpacing: Double = 20,
         snapToGrid: Bool = true,
@@ -135,16 +115,8 @@ public struct DMGProject: Identifiable, Codable, Equatable {
         self.showWatermark = showWatermark
         self.watermarkText = watermarkText
         self.volumeIconPath = volumeIconPath
-        self.eulaEnabled = eulaEnabled
-        self.eulaContent = eulaContent
-        self.eulaLanguage = eulaLanguage
         self.format = .udzo
         self.compressionLevel = 9
-        self.codeSigningEnabled = codeSigningEnabled
-        self.signingIdentity = signingIdentity
-        self.notarizationEnabled = notarizationEnabled
-        self.notarizationProfile = notarizationProfile
-        self.stapleTicket = stapleTicket
         self.showGrid = showGrid
         self.gridSpacing = gridSpacing
         self.snapToGrid = snapToGrid
@@ -175,17 +147,9 @@ public struct DMGProject: Identifiable, Codable, Equatable {
         self.showWatermark = try container.decodeIfPresent(Bool.self, forKey: .showWatermark) ?? true
         self.watermarkText = try container.decodeIfPresent(String.self, forKey: .watermarkText) ?? "Drag to Applications to Install"
         self.volumeIconPath = try container.decodeIfPresent(String.self, forKey: .volumeIconPath)
-        self.eulaEnabled = try container.decodeIfPresent(Bool.self, forKey: .eulaEnabled) ?? false
-        self.eulaContent = try container.decodeIfPresent(String.self, forKey: .eulaContent) ?? ""
-        self.eulaLanguage = try container.decodeIfPresent(String.self, forKey: .eulaLanguage) ?? "en_US"
         // Compression is always enforced as UDZO (zlib)
         self.format = .udzo
         self.compressionLevel = 9
-        self.codeSigningEnabled = try container.decodeIfPresent(Bool.self, forKey: .codeSigningEnabled) ?? false
-        self.signingIdentity = try container.decodeIfPresent(String.self, forKey: .signingIdentity) ?? ""
-        self.notarizationEnabled = try container.decodeIfPresent(Bool.self, forKey: .notarizationEnabled) ?? false
-        self.notarizationProfile = try container.decodeIfPresent(String.self, forKey: .notarizationProfile) ?? ""
-        self.stapleTicket = try container.decodeIfPresent(Bool.self, forKey: .stapleTicket) ?? true
         self.showGrid = try container.decodeIfPresent(Bool.self, forKey: .showGrid) ?? false
         self.gridSpacing = try container.decodeIfPresent(Double.self, forKey: .gridSpacing) ?? 20
         self.snapToGrid = try container.decodeIfPresent(Bool.self, forKey: .snapToGrid) ?? true

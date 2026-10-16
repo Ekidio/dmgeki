@@ -286,42 +286,6 @@ public class DMGBuilderService: ObservableObject {
             _ = try? await executeCommand("/usr/bin/SetFile", arguments: ["-a", "C", finalPath])
         }
         
-        // Stage 11: Code Signing
-        if project.codeSigningEnabled && !project.signingIdentity.isEmpty {
-            updateStage("Signing disk image with Developer ID...", progress: 0.93)
-            log("Signing with identity: \(project.signingIdentity)", level: .command)
-            _ = try await executeCommand("/usr/bin/codesign", arguments: [
-                "--force",
-                "--sign", project.signingIdentity,
-                "--timestamp",
-                finalPath
-            ])
-            log("Code signature verified.", level: .success)
-        }
-        
-        // Stage 12: Notarization
-        if project.notarizationEnabled && !project.notarizationProfile.isEmpty {
-            updateStage("Submitting DMG to Apple Notary Service...", progress: 0.96)
-            log("Submitting to notarytool with keychain profile: \(project.notarizationProfile)", level: .command)
-            _ = try await executeCommand("/usr/bin/xcrun", arguments: [
-                "notarytool",
-                "submit",
-                finalPath,
-                "--keychain-profile", project.notarizationProfile,
-                "--wait"
-            ])
-            
-            if project.stapleTicket {
-                updateStage("Stapling notarization ticket to DMG...", progress: 0.98)
-                _ = try await executeCommand("/usr/bin/xcrun", arguments: [
-                    "stapler",
-                    "staple",
-                    finalPath
-                ])
-                log("Notarization ticket successfully stapled.", level: .success)
-            }
-        }
-        
         self.finalDMGPath = finalPath
     }
     
