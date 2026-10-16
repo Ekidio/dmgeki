@@ -21,6 +21,7 @@ DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/steme
 - **Watermark hint:** an optional "Drag to Applications to Install" style hint; its text and icon follow the **Icon Font Color**.
 - **Icons and labels:** icon size 64–256 pt, label size 10–18 pt, label at the bottom or on the right, label colour with swatches.
 - **Drag arrow:** curved, straight, glow gradient, minimal line or none – baked into the background.
+- **Files & folders:** add extra files and folders to the DMG (manuals, licences, plug-ins…) with **Add Files or Folders…** or by dragging them from Finder onto the sidebar or straight onto the canvas – they land where you drop them. Dropping a `.app` sets it as the target application. Right-click or ⌫ removes an item.
 - **Volume:** mounted volume name, volume icon (your `.icns` or the app's own icon), output file name and folder.
 - **Projects:** **File → Open Project…** (⌘O) and **Save Project…** (⌘S) as `.dmgproj`.
 - **Build DMG** (⌘B, top right): builds the image in the background (UDZO by default; ULFO, UDBZ, UDRO, UDRW supported by the engine).

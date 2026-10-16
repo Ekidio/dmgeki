@@ -279,8 +279,9 @@ public struct DMGProject: Identifiable, Codable, Equatable {
                 )
             )
         }
+        // Only the app → Applications line is centred; extra files / folders keep their place.
         let centerY = window.verticalCenter
-        for i in 0..<items.count {
+        for i in 0..<items.count where items[i].isTargetApp || items[i].isApplicationsSymlink {
             items[i].positionY = centerY
         }
     }

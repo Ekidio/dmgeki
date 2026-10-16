@@ -21,6 +21,7 @@ A DMGEKI egy **EKIDIO** alkalmazás. Lásd még: [STEMEKI](https://github.com/Ek
 - **Watermark felirat:** opcionális „Drag to Applications to Install” jellegű tipp; a szövege és az ikonja az **Icon Font Color** színét követi.
 - **Ikonok és feliratok:** ikonméret 64–256 pt, betűméret 10–18 pt, felirat alul vagy jobbra, feliratszín színmintákkal.
 - **Húzásjelző nyíl:** íves, egyenes, izzó színátmenetes, minimál vonal vagy nincs – a háttérbe égetve.
+- **Fájlok és mappák:** további fájlok és mappák a DMG-be (kézikönyv, licenc, pluginek…) az **Add Files or Folders…** gombbal vagy a Finderből behúzva az oldalsávra vagy egyenesen a vászonra – oda kerülnek, ahová ejted őket. Egy behúzott `.app` lesz a cél alkalmazás. Jobb klikk vagy ⌫ törli az elemet.
 - **Kötet:** a felcsatolt kötet neve, kötetikon (saját `.icns` vagy az app saját ikonja), kimeneti fájlnév és mappa.
 - **Projektek:** **File → Open Project…** (⌘O) és **Save Project…** (⌘S), `.dmgproj` formátumban.
 - **Build DMG** (⌘B, jobb fent): a háttérben elkészíti a lemezképet (alapból UDZO; a motor az ULFO, UDBZ, UDRO, UDRW formátumot is ismeri).

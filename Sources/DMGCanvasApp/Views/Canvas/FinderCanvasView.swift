@@ -8,6 +8,8 @@ public struct FinderCanvasView: View {
     @State private var zoomScale: Double = 1.0
     @State private var activeGuides: [CGPoint] = []
     @State private var isDraggingAnyItem: Bool = false
+    @State private var isFileDropTarget: Bool = false
+    @State private var isDeskDropTarget: Bool = false
     
     public init(project: Binding<DMGProject>, selectedItemID: Binding<UUID?>) {
         self._project = project
@@ -47,11 +49,26 @@ public struct FinderCanvasView: View {
                         alignment: .center
                     )
                 }
+                .onDrop(of: FileURLDrop.types, isTargeted: $isDeskDropTarget) { providers in
+                    FileURLDrop.load(providers) { urls in
+                        selectedItemID = project.importPayload(urls) ?? selectedItemID
+                    }
+                }
             }
         }
         .onAppear {
             project.autoCenterIconsVertically()
         }
+        .onDeleteCommand {
+            if let id = selectedItemID { removeItem(id) }
+        }
+    }
+    
+    private func removeItem(_ id: UUID) {
+        guard let item = project.items.first(where: { $0.id == id }),
+              !item.isTargetApp, !item.isApplicationsSymlink else { return }
+        project.removeItem(id)
+        if selectedItemID == id { selectedItemID = nil }
     }
     
     // MARK: - Finder Window Simulated View
@@ -101,10 +118,31 @@ public struct FinderCanvasView: View {
                             activeGuides = guides
                         }
                     )
+                    .contextMenu {
+                        if !item.isTargetApp && !item.isApplicationsSymlink {
+                            Button("Remove from DMG", role: .destructive) {
+                                removeItem(item.id)
+                            }
+                        }
+                    }
+                }
+                
+                // Drop highlight
+                if isFileDropTarget {
+                    Rectangle()
+                        .stroke(DMGTheme.accent, style: StrokeStyle(lineWidth: 3, dash: [8, 5]))
+                        .background(DMGTheme.accent.opacity(0.08))
+                        .allowsHitTesting(false)
                 }
             }
             .frame(width: CGFloat(project.window.width), height: CGFloat(project.window.height))
             .clipped()
+            // Drop files / folders straight onto the window: they land where they are dropped.
+            .onDrop(of: FileURLDrop.types, isTargeted: $isFileDropTarget) { providers, location in
+                FileURLDrop.load(providers) { urls in
+                    selectedItemID = project.importPayload(urls, at: location) ?? selectedItemID
+                }
+            }
             
             // Optional Status / Path Bar
             if project.window.showStatusbar {

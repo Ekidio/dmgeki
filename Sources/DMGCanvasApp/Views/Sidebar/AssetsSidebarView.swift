@@ -6,6 +6,7 @@ public struct AssetsSidebarView: View {
     @Binding var selectedItemID: UUID?
     
     @State private var isTargetAppDropTarget: Bool = false
+    @State private var isPayloadDropTarget: Bool = false
     
     public init(
         project: Binding<DMGProject>,
@@ -20,6 +21,12 @@ public struct AssetsSidebarView: View {
             VStack(alignment: .leading, spacing: 20) {
                 // 1. Target Application Module (At the very top)
                 targetAppSection
+                
+                Divider()
+                    .background(DMGTheme.divider)
+                
+                // 2. Extra files & folders shipped in the DMG
+                payloadSection
                 
                 Divider()
                     .background(DMGTheme.divider)
@@ -97,8 +104,8 @@ public struct AssetsSidebarView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isTargetAppDropTarget ? DMGTheme.accent : DMGTheme.cardBorder, lineWidth: 1)
                 )
-                .onDrop(of: ["public.file-url"], isTargeted: $isTargetAppDropTarget) { providers in
-                    handleDropTargetApp(providers: providers, at: index)
+                .onDrop(of: FileURLDrop.types, isTargeted: $isTargetAppDropTarget) { providers in
+                    handleDropTargetApp(providers: providers)
                 }
             } else {
                 Button(action: addDefaultTargetApp) {
@@ -246,22 +253,7 @@ public struct AssetsSidebarView: View {
         panel.canChooseFiles = true
         panel.allowedContentTypes = []
         if panel.runModal() == .OK, let url = panel.url {
-            let appName = url.deletingPathExtension().lastPathComponent
-            let fullName = url.lastPathComponent
-            
-            project.items[index].sourcePath = url.path
-            project.items[index].name = fullName
-            project.items[index].destinationName = fullName
-            project.items[index].positionY = project.window.verticalCenter
-            
-            // Auto-populate DMG Names from Imported App
-            project.name = "\(appName) Installer"
-            project.volumeName = "\(appName) Installer"
-            let slug = appName.replacingOccurrences(of: " ", with: "-")
-            project.outputFileName = "\(slug)-Installer.dmg"
-            
-            // Auto-center icons vertically (Y = 175 pt) and guarantee /Applications shortcut
-            project.autoCenterIconsVertically()
+            project.importTargetApp(url)
         }
     }
     
@@ -288,30 +280,132 @@ public struct AssetsSidebarView: View {
         project.autoCenterIconsVertically()
     }
     
-    private func handleDropTargetApp(providers: [NSItemProvider], at index: Int) -> Bool {
-        guard let provider = providers.first else { return false }
-        provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, error in
-            if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                DispatchQueue.main.async {
-                    let appName = url.deletingPathExtension().lastPathComponent
-                    let fullName = url.lastPathComponent
-                    
-                    self.project.items[index].sourcePath = url.path
-                    self.project.items[index].name = fullName
-                    self.project.items[index].destinationName = fullName
-                    self.project.items[index].positionY = self.project.window.verticalCenter
-                    
-                    // Auto-populate DMG Names from Imported App
-                    self.project.name = "\(appName) Installer"
-                    self.project.volumeName = "\(appName) Installer"
-                    let slug = appName.replacingOccurrences(of: " ", with: "-")
-                    self.project.outputFileName = "\(slug)-Installer.dmg"
-                    
-                    // Auto-center icons vertically (Y = 175 pt) and guarantee /Applications shortcut
-                    self.project.autoCenterIconsVertically()
-                }
+    private func handleDropTargetApp(providers: [NSItemProvider]) -> Bool {
+        FileURLDrop.load(providers) { urls in
+            guard let first = urls.first else { return }
+            if first.pathExtension.lowercased() == "app" {
+                project.importTargetApp(first)
+                project.importPayload(Array(urls.dropFirst()))
+            } else {
+                // Not an app: add it (and the rest) as extra files / folders instead.
+                selectedItemID = project.importPayload(urls) ?? selectedItemID
             }
         }
-        return true
+    }
+    
+    // MARK: - Files & Folders
+    
+    private var payloadSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "doc.on.doc")
+                    .foregroundColor(DMGTheme.accent)
+                Text("Files & Folders")
+                    .font(.headline)
+                    .foregroundColor(DMGTheme.textPrimary)
+                Spacer()
+                Text("\(project.extraItems.count)")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(DMGTheme.textMuted)
+            }
+            
+            ForEach(project.extraItems) { item in
+                payloadRow(item)
+            }
+            
+            // Drop zone + add button
+            VStack(spacing: 8) {
+                Image(systemName: "square.and.arrow.down.on.square")
+                    .font(.system(size: 20))
+                    .foregroundColor(isPayloadDropTarget ? DMGTheme.accent : DMGTheme.textMuted)
+                Text("Drop files or folders here")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(DMGTheme.textSecondary)
+                Button("Add Files or Folders...") {
+                    chooseFilesOrFolders()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isPayloadDropTarget ? DMGTheme.accent.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isPayloadDropTarget ? DMGTheme.accent : DMGTheme.cardBorder,
+                            style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+            )
+            .onDrop(of: FileURLDrop.types, isTargeted: $isPayloadDropTarget) { providers in
+                FileURLDrop.load(providers) { urls in
+                    selectedItemID = project.importPayload(urls) ?? selectedItemID
+                }
+            }
+            
+            Text("Shipped in the DMG next to your app. You can also drop them straight onto the canvas.")
+                .font(.caption2)
+                .foregroundColor(DMGTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    private func payloadRow(_ item: DMGItem) -> some View {
+        let isSelected = selectedItemID == item.id
+        let missing = !FileManager.default.fileExists(atPath: item.sourcePath)
+        return HStack(spacing: 10) {
+            Image(nsImage: item.previewImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.destinationName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(DMGTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(missing ? "Missing: \(item.sourcePath)" : item.sourcePath)
+                    .font(.system(size: 10))
+                    .foregroundColor(missing ? .orange : DMGTheme.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer(minLength: 4)
+            Button {
+                if selectedItemID == item.id { selectedItemID = nil }
+                project.removeItem(item.id)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(DMGTheme.textMuted)
+            }
+            .buttonStyle(.plain)
+            .help("Remove from DMG")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 7)
+                .fill(isSelected ? DMGTheme.accent.opacity(0.16) : DMGTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(isSelected ? DMGTheme.accent : DMGTheme.cardBorder, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { selectedItemID = item.id }
+    }
+    
+    private func chooseFilesOrFolders() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.treatsFilePackagesAsDirectories = false
+        panel.prompt = "Add"
+        panel.message = "Choose files or folders to include in the DMG"
+        if panel.runModal() == .OK {
+            selectedItemID = project.importPayload(panel.urls) ?? selectedItemID
+        }
     }
 }
