@@ -123,19 +123,24 @@ struct MechanicalSound {
 
     // MARK: - The two animations
 
-    /// Start-up splash: disc spins up and is written block by block, casing drops and latches,
-    /// "EKI" snaps in, the line slides out.
+    /// Start-up splash: the drive spins up, the head writes while the media streams in,
+    /// blocks snap in as the bar fills, and the image latches shut at 100 %.
     static func splash() -> MechanicalSound {
-        var m = MechanicalSound(duration: 2.6)
-        m.tick(0.02, 0.2)                                       // "DMG" slides in
-        m.whir(0.10, 1.0, from: 70, to: 310, 0.10)               // disc spin-up
-        m.seek(0.45, 0.62, rate: 38)                             // head writing
-        for k in 0..<5 { m.snap(0.95 + Double(k) * 0.07 - 0.02, 0.22, pitch: 1 + Double(k) * 0.12) } // tracks/blocks done
-        m.clunk(1.12, 0.55)                                      // casing lands
-        m.latch(1.17, 0.3)                                       // and locks
-        m.snap(1.30, 0.4, pitch: 1.4)                            // "EKI" pops
-        m.whir(1.36, 0.5, from: 220, to: 520, 0.05)              // line slides out
-        m.tick(1.62, 0.18); m.tick(1.66, 0.12)                   // subtitle
+        var m = MechanicalSound(duration: 3.0)
+        m.whir(0.10, 2.3, from: 70, to: 300, 0.09)              // drive spin-up and run
+        m.seek(0.35, 1.85, rate: 30, 0.13)                       // head writing
+        for k in 0..<8 { m.snap(0.45 + Double(k) * 0.23, 0.18, pitch: 1 + Double(k) * 0.07) } // blocks assembling
+        m.latch(2.25, 0.32)                                      // 100 %: sealed
+        m.snap(2.28, 0.35, pitch: 1.6)
+        return m
+    }
+
+    /// While a DMG is building: a short spin-up as the scene opens.
+    static func buildStart() -> MechanicalSound {
+        var m = MechanicalSound(duration: 1.2)
+        m.clunk(0.02, 0.35)
+        m.whir(0.05, 1.1, from: 60, to: 260, 0.08)
+        m.seek(0.4, 0.7, rate: 26, 0.1)
         return m
     }
 

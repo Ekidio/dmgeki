@@ -21,13 +21,14 @@ DMGEKI is an **EKIDIO** app. See also: [STEMEKI](https://github.com/Ekidio/steme
 - **Watermark hint:** an optional "Drag to Applications to Install" style hint; its text and icon follow the **Icon Font Color**.
 - **Icons and labels:** icon size 64–256 pt, label size 10–18 pt, label at the bottom or on the right, label colour with swatches.
 - **Drag arrow:** curved, straight, glow gradient, minimal line or none – baked into the background.
-- **Files & folders:** add extra files and folders to the DMG (manuals, licences, plug-ins…) with **Add Files or Folders…** or by dragging them from Finder onto the sidebar or straight onto the canvas – they land where you drop them. Dropping a `.app` sets it as the target application. Right-click or ⌫ removes an item.
+- **Files & folders:** add extra files and folders to the DMG (manuals, licences, plug-ins…) with **Add Files or Folders…** or by dragging them from Finder onto the sidebar or straight onto the canvas – they land where you drop them. Dropping a `.app` sets it as the target application while none is set. Right-click or ⌫ removes an item.
 - **Volume:** mounted volume name, volume icon (your `.icns` or the app's own icon), output file name and folder.
 - **Automatic updates:** DMGEKI checks GitHub for a new version at every launch (and daily while open) and offers to install it; **DMGEKI → Check for Updates…** checks right away. Updates are verified with an EdDSA signature (Sparkle).
 - **Projects:** **File → Open Project…** (⌘O) and **Save Project…** (⌘S) as `.dmgproj`.
 - **Build DMG** (⌘B, top right): builds the image in the background (UDZO by default; ULFO, UDBZ, UDRO, UDRW supported by the engine).
+- **Building:** while the DMG is built, files, tapes, records and folders stream into the DMGEKI drive, whose screen shows the real progress and the current step (with Cancel).
 - **DMG Ready:** when the build is done, an animated card shows the file and its size, with **Show in Finder**, **Open DMG** and **Done**.
-- **EKI start-up animation:** "DMG" slides in, a disc is burned track by track, the blue drive casing drops over it and locks, and "EKI" is cut out of it – with a mechanical sound (spin-up, head ticks, blocks snapping in, the latch) instead of a jingle. Click to skip.
+- **Start-up animation:** media streams into the DMGEKI drive while its screen counts "CREATING DISC IMAGE…" up to 100 % – with a mechanical sound (spin-up, head ticks, blocks snapping in, the latch). Click to skip.
 
 ![DMG Ready](docs/assets/dmgeki-ready.png)
 
@@ -85,7 +86,9 @@ DMGEKI/
         ├── MainView.swift             # sidebar · canvas · inspector, toolbar
         ├── Canvas/ Sidebar/ Inspector/ Console/
         └── Components/
-            ├── SplashView.swift       # EKI start-up animation
+            ├── SplashView.swift       # start-up animation
+            ├── BuildProgressView.swift # animation while building
+            ├── DataStreamDriveScene.swift # the shared "creating disc image" scene
             ├── BuildSuccessView.swift # "DMG Ready" animation
             ├── HexColorWell.swift     # colour well bound to hex (eyedropper-safe)
             └── DMGEKILogoView.swift

@@ -5,7 +5,6 @@ public struct AssetsSidebarView: View {
     @Binding var project: DMGProject
     @Binding var selectedItemID: UUID?
     
-    @State private var isTargetAppDropTarget: Bool = false
     @State private var isPayloadDropTarget: Bool = false
     
     public init(
@@ -43,6 +42,13 @@ public struct AssetsSidebarView: View {
             .padding(16)
         }
         .background(DMGTheme.sidebar)
+        // One drop target for the whole sidebar. Drop targets inside the scroll content are placed without the
+        // scroll view's top inset (≈60 pt too high) and swallow clicks meant for the buttons above them.
+        .onDrop(of: FileURLDrop.types, isTargeted: $isPayloadDropTarget) { providers in
+            FileURLDrop.load(providers) { urls in
+                selectedItemID = project.importPayload(urls) ?? selectedItemID
+            }
+        }
     }
     
     // MARK: - 1. Target Application Section (Top Module)
@@ -98,15 +104,12 @@ public struct AssetsSidebarView: View {
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(isTargetAppDropTarget ? DMGTheme.accent.opacity(0.18) : DMGTheme.surface)
+                        .fill(isPayloadDropTarget && app.sourcePath.isEmpty ? DMGTheme.accent.opacity(0.18) : DMGTheme.surface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isTargetAppDropTarget ? DMGTheme.accent : DMGTheme.cardBorder, lineWidth: 1)
+                        .stroke(isPayloadDropTarget && app.sourcePath.isEmpty ? DMGTheme.accent : DMGTheme.cardBorder, lineWidth: 1)
                 )
-                .onDrop(of: FileURLDrop.types, isTargeted: $isTargetAppDropTarget) { providers in
-                    handleDropTargetApp(providers: providers)
-                }
             } else {
                 Button(action: addDefaultTargetApp) {
                     Label("Add Target Application", systemImage: "plus.circle")
@@ -280,19 +283,6 @@ public struct AssetsSidebarView: View {
         project.autoCenterIconsVertically()
     }
     
-    private func handleDropTargetApp(providers: [NSItemProvider]) -> Bool {
-        FileURLDrop.load(providers) { urls in
-            guard let first = urls.first else { return }
-            if first.pathExtension.lowercased() == "app" {
-                project.importTargetApp(first)
-                project.importPayload(Array(urls.dropFirst()))
-            } else {
-                // Not an app: add it (and the rest) as extra files / folders instead.
-                selectedItemID = project.importPayload(urls) ?? selectedItemID
-            }
-        }
-    }
-    
     // MARK: - Files & Folders
     
     private var payloadSection: some View {
@@ -313,36 +303,39 @@ public struct AssetsSidebarView: View {
                 payloadRow(item)
             }
             
-            // Drop zone + add button
-            VStack(spacing: 8) {
+            // Add button above the drop zone (kept outside it, so nothing in the drop target can swallow its clicks)
+            Button {
+                chooseFilesOrFolders()
+            } label: {
+                Label("Add Files or Folders...", systemImage: "plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            
+            // Drop zone
+            VStack(spacing: 6) {
                 Image(systemName: "square.and.arrow.down.on.square")
                     .font(.system(size: 20))
                     .foregroundColor(isPayloadDropTarget ? DMGTheme.accent : DMGTheme.textMuted)
-                Text("Drop files or folders here")
+                Text("Drag & drop files or folders here")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(DMGTheme.textSecondary)
-                Button("Add Files or Folders...") {
-                    chooseFilesOrFolders()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(isPayloadDropTarget ? DMGTheme.accent.opacity(0.15) : Color.clear)
+                    .allowsHitTesting(false)
             )
+            // Decoration only: keep the dashed frame out of hit testing.
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(isPayloadDropTarget ? DMGTheme.accent : DMGTheme.cardBorder,
                             style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                    .allowsHitTesting(false)
             )
-            .onDrop(of: FileURLDrop.types, isTargeted: $isPayloadDropTarget) { providers in
-                FileURLDrop.load(providers) { urls in
-                    selectedItemID = project.importPayload(urls) ?? selectedItemID
-                }
-            }
             
             Text("Shipped in the DMG next to your app. You can also drop them straight onto the canvas.")
                 .font(.caption2)

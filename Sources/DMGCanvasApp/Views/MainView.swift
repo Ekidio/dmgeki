@@ -8,6 +8,7 @@ public struct MainView: View {
     @State private var showBuildSuccessAlert: Bool = false
     @State private var showBuildErrorAlert: Bool = false
     @State private var showSplash: Bool = true
+    @State private var showBuildScene: Bool = false
     
     public init() {}
     
@@ -45,7 +46,14 @@ public struct MainView: View {
         .toolbar {
             toolbarItems
         }
-        .toolbar(showSplash ? .hidden : .visible, for: .windowToolbar)
+        .overlay {
+            // Data streaming into the drive while the DMG is being built.
+            if showBuildScene {
+                BuildProgressView(builder: builder)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showBuildScene)
         .overlay {
             // "DMG ready" celebration replaces the plain success alert.
             if showBuildSuccessAlert, let path = builder.finalDMGPath {
@@ -141,7 +149,14 @@ public struct MainView: View {
     
     private func triggerBuild() {
         Task {
+            showBuildScene = true
+            let started = Date()
             await builder.buildDMG(project: project)
+            // Fast builds would only flash the scene: keep it up a moment and let 100 % register.
+            let elapsed = Date().timeIntervalSince(started)
+            let hold = max(0.6, 2.4 - elapsed)
+            try? await Task.sleep(nanoseconds: UInt64(hold * 1_000_000_000))
+            showBuildScene = false
             if builder.errorMessage != nil {
                 showBuildErrorAlert = true
             } else if builder.finalDMGPath != nil {
